@@ -2,7 +2,7 @@
 
 Pre-requirements:
 - keypoint detectors;
-= descriptorsж
+- descriptors;
 - methods to match them between successive images;
 - how to detect objects in an image using the YOLO deep-learning framework;
 - how to associate regions in a camera image with Lidar points in 3D space.
