@@ -7,8 +7,6 @@
 #include "camFusion.hpp"
 #include "dataStructures.h"
 
-using namespace std;
-
 
 // Create groups of Lidar points whose projection into the camera falls into the same bounding box
 void clusterLidarWithROI(
@@ -37,9 +35,9 @@ void clusterLidarWithROI(
     pt.y = Y.at<double>(1, 0) / Y.at<double>(0, 2);
 
     // Pointers to all bounding boxes which enclose the current Lidar point
-    vector<vector<BoundingBox>::iterator> enclosingBoxes;
+    std::vector<std::vector<BoundingBox>::iterator> enclosingBoxes;
 
-    for (vector<BoundingBox>::iterator it2 = boundingBoxes.begin(); it2 != boundingBoxes.end(); ++it2) {
+    for (std::vector<BoundingBox>::iterator it2 = boundingBoxes.begin(); it2 != boundingBoxes.end(); ++it2) {
       // Shrink current bounding box slightly to avoid having too many outlier points around the edges
       cv::Rect smallerBox;
       smallerBox.x = (*it2).roi.x + shrinkFactor * (*it2).roi.width / 2.0;
@@ -125,7 +123,7 @@ void show3DObjects(
   }
 
   // Display image
-  string windowName = "3D Objects";
+  std::string windowName = "3D Objects";
   cv::namedWindow(windowName, 1);
   cv::imshow(windowName, topviewImg);
 
@@ -176,5 +174,65 @@ void matchBoundingBoxes(
   DataFrame&               prevFrame,
   DataFrame&               currFrame)
 {
-  // ...
+  int maxPrevBoxId = 0;
+  std::multimap<int, int> mmStorage {};
+
+  for (auto match : matches) {
+    int prevBoxId = -1;
+    int currBoxId = -1;
+
+    cv::KeyPoint prevKp = prevFrame.keypoints[match.queryIdx];
+    cv::KeyPoint currKp = currFrame.keypoints[match.trainIdx];
+
+    // For each bounding box in the previous frame
+    for (auto bBox : prevFrame.boundingBoxes) {
+      if (bBox.roi.contains(prevKp.pt)) {
+        prevBoxId = bBox.boxID;
+      }
+    }
+
+    // For each bounding box in the current frame
+    for (auto bBox : currFrame.boundingBoxes) {
+      if (bBox.roi.contains(currKp.pt)) {
+        currBoxId = bBox.boxID;
+      }
+    }
+
+    // Add the containing boxID for each match to a multimap
+    mmStorage.insert(std::make_pair(currBoxId, prevBoxId));
+
+    maxPrevBoxId = std::max(maxPrevBoxId, prevBoxId);
+  }
+
+  // Setup a list of boxId's (int values) to iterate over in the current frame
+  std::vector<int> currFrameBBoxIds {};
+
+  for (auto bBox : currFrame.boundingBoxes) {
+    currFrameBBoxIds.push_back(bBox.boxID);
+  }
+
+  // Loop through each bBoxId in the current frame,
+  // and get the most frequent value of associated bBoxId for the previous frame
+  for (int id : currFrameBBoxIds) {
+    // Count the greatest number of matches in the multimap,
+    // where each element has a [key=currBoxId] and [value=prevBoxId]
+    //
+    // std::multimap::equal_range(id) will return the range of all elements matching key = id.
+    auto rangePrevBBoxIds = mmStorage.equal_range(id);
+
+    // Create a vector of results (per current bounding box) of prevBBoxIds
+    std::vector<int> results(maxPrevBoxId + 1, 0);
+
+    // Accumulator loop
+    for (auto it = rangePrevBBoxIds.first; it != rangePrevBBoxIds.second; ++it) {
+      results[(*it).second] += 1;
+    }
+
+    // Get the index of the maximum result of the previous frame's boxId
+    int modeIdx = std::distance(results.begin(), std::max_element(results.begin(), results.end()));
+
+    // Set the best matching bounding box map with
+    // {key = Current frame's boxId, value = Previous frame's most likely matching boxId}
+    bbBestMatches.insert(std::make_pair(id, modeIdx));
+  }
 }

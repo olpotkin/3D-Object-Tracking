@@ -142,7 +142,7 @@ int main(int argc, const char *argv[])
     cout << "#4 : CLUSTER LIDAR POINT CLOUD done" << endl;
 
     // REMOVE THIS LINE BEFORE PROCEEDING WITH THE FINAL PROJECT
-    continue; // Skips directly to the next image without processing what comes beneath
+    //continue; // Skips directly to the next image without processing what comes beneath
 
     // DETECT IMAGE KEYPOINTS
 
@@ -219,7 +219,12 @@ int main(int argc, const char *argv[])
       //// STUDENT ASSIGNMENT
       //// TASK FP.1 -> match list of 3D objects (vector<BoundingBox>) between current and previous frame (implement ->matchBoundingBoxes)
       map<int, int> bbBestMatches;
-      matchBoundingBoxes(matches, bbBestMatches, *(dataBuffer.end()-2), *(dataBuffer.end()-1)); // associate bounding boxes between current and previous frame using keypoint matches
+      // Associate bounding boxes between current and previous frame using keypoint matches
+      matchBoundingBoxes(matches, bbBestMatches, *(dataBuffer.end()-2), *(dataBuffer.end()-1));
+      // Trace data (for debugging)
+      //for (auto bbKey : bbBestMatches) {
+      //  std::cout << "{bbKey = " << bbKey.first << ", bbValue=" << bbKey.second << "}" << std::endl;
+      //}
       //// EOF STUDENT ASSIGNMENT
 
       // store matches in current data frame
