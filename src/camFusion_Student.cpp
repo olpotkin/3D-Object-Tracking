@@ -158,13 +158,25 @@ void computeTTCCamera(
 }
 
 
+// Compute the time-to-collision for all matched 3D objects based on Lidar measurements alone
 void computeTTCLidar(
   std::vector<LidarPoint>& lidarPointsPrev,
   std::vector<LidarPoint>& lidarPointsCurr,
   double                   frameRate,
   double&                  TTC)
 {
-  // ...
+  // In each frame, take the median x-distance
+  sortLidarPointByX(lidarPointsPrev);
+  sortLidarPointByX(lidarPointsCurr);
+
+  // The previous frame's closing distance
+  double dist_0 = lidarPointsPrev[lidarPointsPrev.size()/2].x;
+  // The current frame's closing distance
+  double dist_1 = lidarPointsCurr[lidarPointsCurr.size()/2].x;
+
+  // NOTE: constant-velocity model is used
+  // (1.0 / frameRate) - the time elapsed between images
+  TTC = dist_1 * (1.0 / frameRate) / (dist_0 - dist_1);
 }
 
 

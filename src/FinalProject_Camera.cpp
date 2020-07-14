@@ -233,7 +233,7 @@ int main(int argc, const char *argv[])
       cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << endl;
 
 
-      // COMPUTE TTC ON OBJECT IN FRONT
+      /// COMPUTE TTC ON OBJECT IN FRONT
 
       // loop over all BB match pairs
       for (auto it1 = (dataBuffer.end() - 1)->bbMatches.begin(); it1 != (dataBuffer.end() - 1)->bbMatches.end(); ++it1)

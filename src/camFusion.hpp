@@ -51,4 +51,14 @@ void computeTTCLidar(
   std::vector<LidarPoint>& lidarPointsCurr,
   double                   frameRate,
   double&                  TTC);
+
+
+/// @brief Sort Lidar points ascending on the x-coordinate
+inline void sortLidarPointByX(std::vector<LidarPoint> &lidarPts) {
+  std::sort(
+    lidarPts.begin(),
+    lidarPts.end(),
+    [](LidarPoint a, LidarPoint b) { return a.x < b.x; }
+    );
+}
 #endif // camFusion_hpp
