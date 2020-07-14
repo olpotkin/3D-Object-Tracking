@@ -141,7 +141,12 @@ void clusterKptMatchesWithROI(
   std::vector<cv::KeyPoint>& kptsCurr,
   std::vector<cv::DMatch>&   kptMatches)
 {
-  // ...
+  // Loop over all matches in the current frame
+  for (cv::DMatch match : kptMatches) {
+    if (boundingBox.roi.contains(kptsCurr[match.trainIdx].pt)) {
+      boundingBox.kptMatches.push_back(match);
+    }
+  }
 }
 
 
@@ -154,7 +159,49 @@ void computeTTCCamera(
   double&                    TTC,
   cv::Mat*                   visImg)
 {
-  // ...
+  // Compute distance ratios on each pair of keypoints
+  std::vector<double> distRatios;
+
+  for (auto mIt_1 = kptMatches.begin(); mIt_1 != kptMatches.end() - 1; ++mIt_1) {
+    // kptsCurr is indexed by trainIdx
+    cv::KeyPoint kptOuterCurr = kptsCurr.at(mIt_1->trainIdx);
+    // kptsPrev is indexed by queryIdx
+    cv::KeyPoint kptOuterPrev = kptsPrev.at(mIt_1->queryIdx);
+
+    for (auto mIt_2 = kptMatches.begin() + 1; mIt_2 != kptMatches.end(); ++mIt_2) {
+      // kptsCurr is indexed by trainIdx
+      cv::KeyPoint kpInnerCurr = kptsCurr.at(mIt_2->trainIdx);
+      // kptsPrev is indexed by queryIdx
+      cv::KeyPoint kpInnerPrev = kptsPrev.at(mIt_2->queryIdx);
+
+      // Calculate the current and previous Euclidean distancesbetween keypoints
+      double distanceCurr = cv::norm(kptOuterCurr.pt - kpInnerCurr.pt);
+      double distancePrev = cv::norm(kptOuterPrev.pt - kpInnerPrev.pt);
+
+      // Threshold
+      double minDist = 100.0;
+
+      // Avoid division by zero
+      // Apply the threshold
+      if (distancePrev > std::numeric_limits<double>::epsilon() && distanceCurr >= minDist) {
+        double distRatio = distanceCurr / distancePrev;
+        distRatios.push_back(distRatio);
+      }
+    }
+  }
+
+  // Continue if the vector of distRatios is not empty
+  if (distRatios.size() == 0) {
+    TTC = std::numeric_limits<double>::quiet_NaN();
+    return;
+  }
+
+  // Median as a reasonable method of excluding outliers is used
+  std::sort(distRatios.begin(), distRatios.end());
+  double medianDistanceRatio = distRatios[distRatios.size() / 2];
+
+  // Calculate a TTC estimate based on 2D camera features
+  TTC = (-1.0 / frameRate) / (1 - medianDistanceRatio);
 }
 
 
