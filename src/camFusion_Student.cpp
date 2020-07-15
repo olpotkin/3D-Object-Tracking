@@ -191,7 +191,7 @@ void computeTTCCamera(
   }
 
   // Continue if the vector of distRatios is not empty
-  if (distRatios.size() == 0) {
+  if (distRatios.empty()) {
     TTC = std::numeric_limits<double>::quiet_NaN();
     return;
   }
@@ -266,7 +266,7 @@ void matchBoundingBoxes(
   // Setup a list of boxId's (int values) to iterate over in the current frame
   std::vector<int> currFrameBBoxIds {};
 
-  for (auto bBox : currFrame.boundingBoxes) {
+  for (const auto& bBox : currFrame.boundingBoxes) {
     currFrameBBoxIds.push_back(bBox.boxID);
   }
 
@@ -292,6 +292,6 @@ void matchBoundingBoxes(
 
     // Set the best matching bounding box map with
     // {key = Current frame's boxId, value = Previous frame's most likely matching boxId}
-    bbBestMatches.insert(std::make_pair(id, modeIdx));
+    bbBestMatches.insert(std::make_pair(modeIdx, id));
   }
 }

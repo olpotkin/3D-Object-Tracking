@@ -182,8 +182,14 @@ int main(int argc, const char *argv[])
     // Create empty feature list for current image
     std::vector<cv::KeyPoint> keypoints;
 
-    //string detectorType = "SHITOMASI";
+    //std::string detectorType = "SHITOMASI";
+    //std::string detectorType = "HARRIS";
     std::string detectorType = "FAST";
+    //std::string detectorType = "BRISK";
+    //std::string detectorType = "ORB";
+    //std::string detectorType = "AKAZE";
+    //std::string detectorType = "SIFT";
+
 
     // SHI-TOMASI
     if (detectorType.compare("SHITOMASI") == 0) {
@@ -225,7 +231,14 @@ int main(int argc, const char *argv[])
     /// EXTRACT KEYPOINT DESCRIPTORS
 
     cv::Mat descriptors;
-    std::string descriptorType = "ORB"; // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
+
+    //std::string descriptorType = "BRISK";
+    //std::string descriptorType = "BRIEF";
+    std::string descriptorType = "ORB";
+    //std::string descriptorType = "FREAK";
+    //std::string descriptorType = "AKAZE";  // Not compatible with non-AKAZE detectors
+    //std::string descriptorType = "SIFT";   // Not compatible with ORB detectors
+
     descKeypoints(
       (dataBuffer.end() - 1)->keypoints,
       (dataBuffer.end() - 1)->cameraImg,
@@ -242,13 +255,30 @@ int main(int argc, const char *argv[])
       /// MATCH KEYPOINT DESCRIPTORS
 
       std::vector<cv::DMatch> matches;
-      std::string matcherType    = "MAT_BF";     // MAT_BF, MAT_FLANN
-      std::string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
-      std::string selectorType   = "SEL_KNN";    // SEL_NN, SEL_KNN
+
+      // Brute force or Fast Library for Approximate Nearest Neighbors (FLANN)
+      std::string matcherType = "MAT_BF";
+      // string matcherType = "MAT_FLANN";
+
+      // For descriptor type, select binary (BINARY) or histogram of gradients (HOG)
+      // BINARY descriptors: BRISK, BRIEF, ORB, FREAK, and (A)KAZE.
+      // HOG descriptors: SIFT (SURF, GLOH - patented).
+      std::string descriptorCategory {};
+
+      if (descriptorType == "SIFT") {
+        descriptorCategory = "DES_HOG";
+      }
+      else {
+        descriptorCategory = "DES_BINARY";
+      }
+
+      // Nearest neighbors (NN) or k nearest neighbors (KNN) for selector type
+      // string selectorType = "SEL_NN";
+      std::string selectorType = "SEL_KNN";
 
       matchDescriptors((dataBuffer.end() - 2)->keypoints,   (dataBuffer.end() - 1)->keypoints,
                        (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors,
-                       matches, descriptorType, matcherType, selectorType);
+                       matches, descriptorCategory, matcherType, selectorType);
 
       // Store matches in current data frame
       (dataBuffer.end() - 1)->kptMatches = matches;
@@ -304,14 +334,14 @@ int main(int argc, const char *argv[])
         {
           /// STUDENT ASSIGNMENT
           /// TASK FP.2 -> compute time-to-collision based on Lidar data (implement -> computeTTCLidar)
-          double ttcLidar;
+          double ttcLidar = 0.0;
           computeTTCLidar(prevBB->lidarPoints, currBB->lidarPoints, sensorFrameRate, ttcLidar);
           /// EOF STUDENT ASSIGNMENT
 
           /// STUDENT ASSIGNMENT
           /// TASK FP.3 -> assign enclosed keypoint matches to bounding box (implement -> clusterKptMatchesWithROI)
           /// TASK FP.4 -> compute time-to-collision based on camera (implement -> computeTTCCamera)
-          double ttcCamera;
+          double ttcCamera = 0.0;
 
           clusterKptMatchesWithROI(*currBB,
             (dataBuffer.end() - 2)->keypoints,
@@ -327,6 +357,9 @@ int main(int argc, const char *argv[])
           bVis = true;
           if (bVis) {
             cv::Mat visImg = (dataBuffer.end() - 1)->cameraImg.clone();
+
+            showLidarTopview(currBB->lidarPoints, cv::Size(4.0, 20.0), cv::Size(2000, 2000), true);
+
             showLidarImgOverlay(visImg, currBB->lidarPoints, P_rect_00, R_rect_00, RT, &visImg);
 
             cv::rectangle(visImg,
