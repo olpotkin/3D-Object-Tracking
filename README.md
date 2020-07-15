@@ -73,11 +73,21 @@ NOTE: Kalman filter is a great way to combine the two independent TTC measuremen
 
 ## FP.5 Performance Evaluation 1
 
-Examples where the TTC estimate of the Lidar sensor does not seem plausible.
-Observations and Argumentation why this happened.
+In some frames the lidar estimated unreasonably high TTC (e.g. 16.68s).
+This is because of some outliers (or even unstable points) from preceding vehicle's front mirrors.
+In order to filter such a points, the `shrinkFactor` can be increased from 0.1 to 0.15.
+As a result -  output is more accurate.
 
 ## FP.6 Performance Evaluation 2
 
-Run several detector / descriptor combinations and look at the differences in TTC estimation.
-Find out which methods perform best and also include several examples where camera-based TTC estimation is way off.
-Describe observations and also look into potential reasons.
+The TOP-3 the best DETECTOR / DESCRIPTOR combinations in terms of a purpose of detecting keypoints on vehicles are:
+
+* SHITOMASI / ORB (TTC Lidar = 11.9844, TTC Camera = 11.9741)
+* SHITOMASI / BRISK (TTC Lidar = 12.6142, TTC Camera = 12.9876)
+* SHITOMASI / BRIEF (TTC Lidar = 12.6787, TTC Camera = 13.2703)
+
+The outsiders (with biggest TTC deltas) are the following pairs:
+
+* HARRIS / BRIEF (TTC Lidar = 15.9082, TTC Camera = 35.3833)
+* ORB / BRIEF (TTC Lidar = 14.091, TTC Camera = 88.5333)
+* ORB / SIFT (TTC Lidar = 9.59863, TTC Camera = 18.4901)

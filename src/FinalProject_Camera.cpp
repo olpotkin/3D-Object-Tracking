@@ -85,10 +85,9 @@ int main(int argc, const char *argv[])
   std::vector<DataFrame> dataBuffer;            // List of data frames which are held in memory at the same time
 
   // SETTINGS
-  bool bVis  = false;    // Visualize results
-  bool bLog  = false;   // Enable Logs
-  bool bPerf = true;   // Enable Logging for performance-related parts
-
+  bool bVis  = true;    // Visualize results
+  bool bLog  = true;    // Enable Logs
+  bool bPerf = false;   // Enable Logging for performance-related parts
 
   /// MAIN LOOP OVER ALL IMAGES
 
@@ -158,7 +157,7 @@ int main(int argc, const char *argv[])
 
     // Associate Lidar points with camera-based ROI
     // Shrinks each bounding box by the given percentage to avoid 3D object merging at the edges of an ROI
-    float shrinkFactor = 0.10;
+    float shrinkFactor = 0.15;
     clusterLidarWithROI(
       (dataBuffer.end()-1)->boundingBoxes,
       (dataBuffer.end() - 1)->lidarPoints,
