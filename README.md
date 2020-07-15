@@ -1,11 +1,11 @@
 # 3D Object Tracking
 
 Pre-requirements:
-- keypoint detectors;
-- descriptors;
-- methods to match them between successive images;
-- how to detect objects in an image using the YOLO deep-learning framework;
-- how to associate regions in a camera image with Lidar points in 3D space.
+* keypoint detectors;
+* descriptors;
+* methods to match them between successive images;
+* how to detect objects in an image using the YOLO deep-learning framework;
+* how to associate regions in a camera image with Lidar points in 3D space.
 
 Program schematic to see what have accomplished and what's still missing:
 
@@ -43,3 +43,41 @@ NOTE: Kalman filter is a great way to combine the two independent TTC measuremen
 2. Make a build directory in the top level project directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./3D_object_tracking`.
+
+# Implementation Details
+
+## FP.1 Match 3D Objects
+
+* `std::multimap` was used to track bounding box IDs;
+* `std::make_pair(PreviousBoxId, CurrentBoxId)` was used to prepare a pair of bounding boxes into the multimap;
+* In order to determine the best matches between frames, keypoint correspondences per BoundingBox-pair was counted;
+* For more details see `camFusion_Student.cpp`
+
+## FP.2 Compute Lidar-based TTC
+
+* In each frame the median x-distance were taken in order to reduce the impact of outlier lidar points on TTC estimation;
+* `TTC = dist_1 * (1.0 / frameRate) / (dist_0 - dist_1)`, where `dist_0` - the previous frame's closing distance, `dist_1` - the current frame's closing distance
+* For more details see `camFusion_Student.cpp`
+
+## FP.3 Associate Keypoint Correspondences with Bounding Boxes
+
+* Function `clusterKptMatchesWithROI(...)` is called for each bounding box and checks each matched key-point pair in an image;
+* If the key-point is in the ROI (in the current frame), than the key-point match is associated with the current BoundingBox data structure.
+* For more details see `camFusion_Student.cpp`
+
+## FP.4 Compute Camera-based TTC
+
+* The codebase for `computeTTCCamera` method is based on the example from lecture;
+* Calculation of a TTC estimate based on 2D camera features: `TTC = (-1.0 / frameRate) / (1 - medianDistanceRatio)`
+* For more details see `camFusion_Student.cpp`
+
+## FP.5 Performance Evaluation 1
+
+Examples where the TTC estimate of the Lidar sensor does not seem plausible.
+Observations and Argumentation why this happened.
+
+## FP.6 Performance Evaluation 2
+
+Run several detector / descriptor combinations and look at the differences in TTC estimation.
+Find out which methods perform best and also include several examples where camera-based TTC estimation is way off.
+Describe observations and also look into potential reasons.
