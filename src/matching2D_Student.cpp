@@ -120,7 +120,7 @@ void descKeypoints(
   extractor->compute(img, keypoints, descriptors);
   t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
 
-  std::cout << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << std::endl;
+//  std::cout << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << std::endl;
 }
 
 

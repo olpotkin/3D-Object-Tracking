@@ -284,14 +284,16 @@ void matchBoundingBoxes(
 
     // Accumulator loop
     for (auto it = rangePrevBBoxIds.first; it != rangePrevBBoxIds.second; ++it) {
-      results[(*it).second] += 1;
+      if (-1 != (*it).second){
+        results[(*it).second] += 1;
+      }
     }
 
     // Get the index of the maximum result of the previous frame's boxId
     int modeIdx = std::distance(results.begin(), std::max_element(results.begin(), results.end()));
 
     // Set the best matching bounding box map with
-    // {key = Current frame's boxId, value = Previous frame's most likely matching boxId}
+    // {key = Previous frame's most likely matching boxId, value = Current frame's boxId}
     bbBestMatches.insert(std::make_pair(modeIdx, id));
   }
 }

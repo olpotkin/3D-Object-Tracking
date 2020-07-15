@@ -106,7 +106,7 @@ void detectObjects(
     bBoxes.push_back(bBox);
   }
 
-  // show results
+  // Show results
   if (bVis) {
 
     cv::Mat visImg = img.clone();

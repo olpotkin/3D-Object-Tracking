@@ -83,7 +83,12 @@ int main(int argc, const char *argv[])
   double sensorFrameRate = 10.0 / imgStepWidth; // Frames per second for Lidar and camera
   int    dataBufferSize  = 2;                   // No. of images which are held in memory (ring buffer) at the same time
   std::vector<DataFrame> dataBuffer;            // List of data frames which are held in memory at the same time
-  bool              bVis = false;               // Visualize results
+
+  // SETTINGS
+  bool bVis  = false;    // Visualize results
+  bool bLog  = false;   // Enable Logs
+  bool bPerf = true;   // Enable Logging for performance-related parts
+
 
   /// MAIN LOOP OVER ALL IMAGES
 
@@ -103,7 +108,9 @@ int main(int argc, const char *argv[])
     frame.cameraImg = img;
     dataBuffer.push_back(frame);
 
-    std::cout << "#1 : LOAD IMAGE INTO BUFFER done" << std::endl;
+    if (bLog) {
+      std::cout << "#1 : LOAD IMAGE INTO BUFFER done" << std::endl;
+    }
 
     /// DETECT & CLASSIFY OBJECTS
 
@@ -119,9 +126,11 @@ int main(int argc, const char *argv[])
       yoloClassesFile,
       yoloModelConfiguration,
       yoloModelWeights,
-      bVis);
+      false);                 // Switch to true to see detected objects
 
-    std::cout << "#2 : DETECT & CLASSIFY OBJECTS done" << std::endl;
+    if (bLog) {
+      std::cout << "#2 : DETECT & CLASSIFY OBJECTS done" << std::endl;
+    }
 
     /// CROP LIDAR POINTS
 
@@ -141,7 +150,9 @@ int main(int argc, const char *argv[])
 
     (dataBuffer.end() - 1)->lidarPoints = lidarPoints;
 
-    std::cout << "#3 : CROP LIDAR POINTS done" << std::endl;
+    if (bLog) {
+      std::cout << "#3 : CROP LIDAR POINTS done" << std::endl;
+    }
 
     /// CLUSTER LIDAR POINT CLOUD
 
@@ -157,7 +168,6 @@ int main(int argc, const char *argv[])
       RT);
 
     // Visualize 3D objects
-    bVis = true;
     if (bVis) {
       show3DObjects(
         (dataBuffer.end()-1)->boundingBoxes,
@@ -165,9 +175,10 @@ int main(int argc, const char *argv[])
         cv::Size(2000, 2000),
         true);
     }
-    bVis = false;
 
-    std::cout << "#4 : CLUSTER LIDAR POINT CLOUD done" << std::endl;
+    if (bLog) {
+      std::cout << "#4 : CLUSTER LIDAR POINT CLOUD done" << std::endl;
+    }
 
     // REMOVE THIS LINE BEFORE PROCEEDING WITH THE FINAL PROJECT
     //continue; // Skips directly to the next image without processing what comes beneath
@@ -210,6 +221,12 @@ int main(int argc, const char *argv[])
       throw std::invalid_argument(detectorType + " IS NOT VALID");
     }
 
+    if (bPerf) {
+      if (dataBuffer.size() > 1) {
+        std::cout << detectorType << ",";
+      }
+    }
+
     // Optional : limit number of keypoints (helpful for debugging and learning)
     bool bLimitKpts = false;
     if (bLimitKpts) {
@@ -220,13 +237,18 @@ int main(int argc, const char *argv[])
         keypoints.erase(keypoints.begin() + maxKeypoints, keypoints.end());
       }
       cv::KeyPointsFilter::retainBest(keypoints, maxKeypoints);
-      std::cout << " NOTE: Keypoints have been limited!" << std::endl;
+
+      if (bLog) {
+        std::cout << " NOTE: Keypoints have been limited!" << std::endl;
+      }
     }
 
     // Push keypoints and descriptor for current frame to end of data buffer
     (dataBuffer.end() - 1)->keypoints = keypoints;
 
-    std::cout << "#5 : DETECT KEYPOINTS done" << std::endl;
+    if (bLog) {
+      std::cout << "#5 : DETECT KEYPOINTS done" << std::endl;
+    }
 
     /// EXTRACT KEYPOINT DESCRIPTORS
 
@@ -234,7 +256,7 @@ int main(int argc, const char *argv[])
 
     //std::string descriptorType = "BRISK";
     //std::string descriptorType = "BRIEF";
-    std::string descriptorType = "ORB";
+    std::string descriptorType = "ORB";      // Not compatible with SIFT detector
     //std::string descriptorType = "FREAK";
     //std::string descriptorType = "AKAZE";  // Not compatible with non-AKAZE detectors
     //std::string descriptorType = "SIFT";   // Not compatible with ORB detectors
@@ -248,7 +270,9 @@ int main(int argc, const char *argv[])
     // Push descriptors for current frame to end of data buffer
     (dataBuffer.end() - 1)->descriptors = descriptors;
 
-    std::cout << "#6 : EXTRACT DESCRIPTORS done" << std::endl;
+    if (bLog) {
+      std::cout << "#6 : EXTRACT DESCRIPTORS done" << std::endl;
+    }
 
     // Wait until at least two images have been processed
     if (dataBuffer.size() > 1) {
@@ -261,7 +285,7 @@ int main(int argc, const char *argv[])
       // string matcherType = "MAT_FLANN";
 
       // For descriptor type, select binary (BINARY) or histogram of gradients (HOG)
-      // BINARY descriptors: BRISK, BRIEF, ORB, FREAK, and (A)KAZE.
+      // BINARY descriptors: BRISK, BRIEF, ORB, FREAK, and AKAZE.
       // HOG descriptors: SIFT (SURF, GLOH - patented).
       std::string descriptorCategory {};
 
@@ -283,7 +307,13 @@ int main(int argc, const char *argv[])
       // Store matches in current data frame
       (dataBuffer.end() - 1)->kptMatches = matches;
 
-      std::cout << "#7 : MATCH KEYPOINT DESCRIPTORS done" << std::endl;
+      if (bPerf) {
+        std::cout << descriptorType << "," << imgIndex << ",";
+      }
+
+      if (bLog) {
+        std::cout << "#7 : MATCH KEYPOINT DESCRIPTORS done" << std::endl;
+      }
 
       /// TRACK 3D OBJECT BOUNDING BOXES
 
@@ -302,7 +332,9 @@ int main(int argc, const char *argv[])
       // Store matches in current data frame
       (dataBuffer.end()-1)->bbMatches = bbBestMatches;
 
-      std::cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << std::endl;
+      if (bLog) {
+        std::cout << "#8 : TRACK 3D OBJECT BOUNDING BOXES done" << std::endl;
+      }
 
       /// COMPUTE TTC ON OBJECT IN FRONT
 
@@ -352,9 +384,14 @@ int main(int argc, const char *argv[])
             (dataBuffer.end() - 2)->keypoints,
             (dataBuffer.end() - 1)->keypoints,
             currBB->kptMatches, sensorFrameRate, ttcCamera);
+
+          if (bPerf) {
+            std::cout << ttcLidar << "," << ttcCamera;
+            std::cout << std::endl;
+          }
+
           /// EOF STUDENT ASSIGNMENT
 
-          bVis = true;
           if (bVis) {
             cv::Mat visImg = (dataBuffer.end() - 1)->cameraImg.clone();
 
@@ -374,16 +411,15 @@ int main(int argc, const char *argv[])
             std::string windowName = "Final Results : TTC";
             cv::namedWindow(windowName, 4);
             cv::imshow(windowName, visImg);
-            std::cout << "Press key to continue to next frame" << std::endl;
-            cv::waitKey(0);
-          }
-          bVis = false;
 
+            if (bLog) {
+              std::cout << "Press key to continue to next frame" << std::endl;
+              cv::waitKey(0);
+            }
+          }
         } // eof TTC computation
       } // eof loop over all BB matches
-
     }
-
   } // eof loop over all images
 
   return 0;
